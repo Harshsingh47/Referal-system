@@ -20,7 +20,9 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      // Allow requests with no origin (like mobile apps, curl, or health checks)
+      if (!origin) return callback(null, true);
+
       if (
         allowedOrigins.indexOf(origin) !== -1 ||
         origin.endsWith('.vercel.app') ||
@@ -41,20 +43,24 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Apply general rate limiter to all API calls
-app.use('/api', generalRateLimiter);
+app.use(generalRateLimiter);
 
-// Root greeting & status
-app.get('/', (req, res) => {
-  res.json({
-    project: 'Referral Registration & QR Code Generation System API',
-    version: '1.0.0',
-    documentation: '/api/health',
-    status: 'online'
-  });
+// Root greeting & status (only for exact root GET /)
+app.get('/', (req, res, next) => {
+  if (req.path === '/' || req.path === '') {
+    return res.json({
+      project: 'Referral Registration & QR Code Generation System API',
+      version: '1.0.0',
+      documentation: '/health',
+      status: 'online'
+    });
+  }
+  next();
 });
 
-// API Routes
+// API Routes mounted at both /api and root /
 app.use('/api', referralRoutes);
+app.use('/', referralRoutes);
 
 // 404 handler for unknown endpoints
 app.use((req, res) => {

@@ -6,6 +6,21 @@ import { generateQRCodeDataUrl } from '../utils/qrcode.js';
 import { validateRegistrationInput } from '../utils/validators.js';
 
 /**
+ * Resolve base URL dynamically from request or env (essential for Vercel)
+ */
+export const getBaseUrl = (req) => {
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL.replace(/\/+$/, '');
+  }
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return 'http://localhost:5173';
+};
+
+/**
  * Controller to handle user registration
  * POST /api/register
  */
@@ -82,21 +97,6 @@ export const registerUser = async (req, res, next) => {
     });
 
     await registration.save();
-
-/**
- * Resolve base URL dynamically from request or env (essential for Vercel)
- */
-const getBaseUrl = (req) => {
-  if (process.env.FRONTEND_URL) {
-    return process.env.FRONTEND_URL.replace(/\/+$/, '');
-  }
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-  if (host) {
-    return `${proto}://${host}`;
-  }
-  return 'http://localhost:5173';
-};
 
     // 8. Generate dynamic Referral URL and QR Code
     const frontendBase = getBaseUrl(req);
