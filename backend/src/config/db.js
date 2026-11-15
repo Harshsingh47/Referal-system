@@ -1,55 +1,70 @@
 import mongoose from 'mongoose';
 import dns from 'dns';
 
-// Fix Windows / ISP local DNS querySrv ECONNREFUSED for MongoDB Atlas
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-} catch (e) {
-  // Ignore if custom DNS cannot be set
+// Fix Windows local DNS querySrv ECONNREFUSED for MongoDB Atlas
+// NEVER run on Vercel/Linux as Lambda blocks outbound UDP port 53 to custom DNS servers!
+if (process.platform === 'win32' && !process.env.VERCEL) {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+  } catch (e) {
+    // Ignore if custom DNS cannot be set
+  }
 }
 
+let cachedConnection = null;
 let mongoMemoryServerInstance = null;
 
 /**
- * Connect to MongoDB Atlas (or in-memory fallback in dev)
+ * Connect to MongoDB Atlas (with serverless connection caching)
  */
 export const connectDB = async () => {
+  // If connection is already open and ready, reuse it immediately
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  // If connection is in the process of connecting, wait for it
+  if (mongoose.connection.readyState === 2 && cachedConnection) {
+    return cachedConnection;
+  }
+
   const uri = process.env.MONGODB_URI;
 
   if (uri && !uri.includes('<username>') && !uri.includes('username:password')) {
     try {
       console.log('[Database] Connecting to MongoDB Atlas...');
-      const conn = await mongoose.connect(uri, {
-        autoIndex: true,
-        serverSelectionTimeoutMS: 10000,
+      cachedConnection = await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 8000,
         socketTimeoutMS: 45000,
       });
 
-      console.log(`[Database] MongoDB Atlas Connected Successfully: ${conn.connection.host}`);
-      return conn;
+      console.log(`[Database] MongoDB Atlas Connected Successfully: ${mongoose.connection.host}`);
+      return mongoose.connection;
     } catch (error) {
       console.error(`[Database Error] Failed to connect to MongoDB Atlas: ${error.message}`);
-      if (process.env.NODE_ENV === 'production') {
-        process.exit(1);
+      if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+        throw new Error(`MongoDB Atlas connection error: ${error.message}. Please verify MONGODB_URI and ensure 0.0.0.0/0 is added to Atlas Network Access.`);
       }
     }
+  } else if (process.env.VERCEL) {
+    throw new Error('MONGODB_URI is not configured in Vercel Environment Variables. Please add MONGODB_URI in Vercel Project Settings.');
   }
 
-  // Fallback to MongoMemoryServer in development if no valid external Atlas URI is provided or fails
+  // Fallback to in-memory MongoDB ONLY in local development
   try {
-    console.log('[Database] Initializing In-Memory MongoDB Server for development/testing...');
+    console.log('[Database] Initializing In-Memory MongoDB Server for local dev...');
     const { MongoMemoryServer } = await import('mongodb-memory-server');
     mongoMemoryServerInstance = await MongoMemoryServer.create();
     const memoryUri = mongoMemoryServerInstance.getUri();
 
-    const conn = await mongoose.connect(memoryUri, {
+    await mongoose.connect(memoryUri, {
       autoIndex: true
     });
 
     console.log(`[Database] In-Memory MongoDB Connected at: ${memoryUri}`);
-    return conn;
+    return mongoose.connection;
   } catch (memError) {
-    console.error(`[Database Error] In-Memory MongoDB initialization failed: ${memError.message}`);
+    console.error(`[Database Error] In-Memory MongoDB failed: ${memError.message}`);
     throw memError;
   }
 };

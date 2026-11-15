@@ -1,20 +1,18 @@
 import app from '../backend/src/app.js';
 import { connectDB } from '../backend/src/config/db.js';
 
-let isConnected = false;
-
 /**
  * Vercel Serverless Function Handler
- * Automatically handles all /api/* requests with cached DB connection
  */
 export default async function handler(req, res) {
-  if (!isConnected) {
-    try {
-      await connectDB();
-      isConnected = true;
-    } catch (err) {
-      console.error('[Vercel Serverless DB Error]:', err.message);
-    }
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error('[Vercel Serverless DB Error]:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 
   return app(req, res);
