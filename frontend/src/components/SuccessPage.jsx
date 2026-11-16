@@ -14,6 +14,7 @@ import {
   Hash,
   ExternalLink
 } from 'lucide-react';
+import CompanyQrCard from './CompanyQrCard';
 
 export default function SuccessPage({ data, onNewRegistration, onShowToast }) {
   const [copiedCode, setCopiedCode] = useState(false);
@@ -239,6 +240,11 @@ export default function SuccessPage({ data, onNewRegistration, onShowToast }) {
             Your bank account information has been securely encrypted with AES-256. Neither your account number nor any personal financial details are embedded in the QR code or the referral URL.
           </p>
         </div>
+      </div>
+
+      {/* Official Enterprise UPI QR Code */}
+      <div style={{ marginBottom: '28px' }}>
+        <CompanyQrCard onShowToast={onShowToast} title="Official Enterprise Payment & Support QR Code" />
       </div>
 
       {/* Action Footer */}

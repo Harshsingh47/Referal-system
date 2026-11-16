@@ -15,6 +15,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import InputField from './InputField';
+import CompanyQrCard from './CompanyQrCard';
 import { registerUser, checkReferralCode } from '../api/client';
 
 export const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
@@ -533,6 +534,9 @@ export default function RegistrationForm({ onRegistrationSuccess, initialReferra
               )}
             </button>
           </div>
+
+          {/* Official Company UPI QR Code */}
+          <CompanyQrCard onShowToast={onShowToast} title="Official Verification & Payment QR Code" />
         </div>
       </form>
     </div>

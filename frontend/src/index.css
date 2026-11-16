@@ -850,3 +850,172 @@ body {
     opacity: 1;
   }
 }
+
+/* Company QR Card Styles */
+.company-qr-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+  padding: 24px;
+  margin-top: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.company-qr-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09);
+}
+
+.company-qr-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.company-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+}
+
+.company-qr-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--slate-900);
+  margin-bottom: 4px;
+}
+
+.company-qr-subtitle {
+  font-size: 0.84rem;
+  color: var(--slate-500);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.company-qr-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+@media (max-width: 640px) {
+  .company-qr-body {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+}
+
+.company-qr-frame {
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.company-qr-img {
+  width: 170px;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+.company-upi-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.company-name-tag {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: var(--slate-800);
+}
+
+.upi-id-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  gap: 8px;
+}
+
+.upi-id-text-wrap {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.upi-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: var(--slate-400);
+  font-weight: 700;
+}
+
+.upi-value {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.copy-upi-btn {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.copy-upi-btn:hover {
+  background: #dbeafe;
+}
+
+.copy-upi-btn.copied {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.upi-apps-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--slate-500);
+  line-height: 1.3;
+}
