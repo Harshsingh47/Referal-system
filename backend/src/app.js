@@ -26,6 +26,7 @@ app.use(
       if (
         allowedOrigins.indexOf(origin) !== -1 ||
         origin.endsWith('.vercel.app') ||
+        origin.endsWith('sudhiskaenterprises.com') ||
         process.env.NODE_ENV !== 'production'
       ) {
         return callback(null, true);
