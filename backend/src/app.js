@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import referralRoutes from './routes/referralRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { generalRateLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -33,7 +34,7 @@ app.use(
       }
       return callback(new Error('Cross-Origin Request Blocked by CORS'));
     },
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   })
@@ -58,6 +59,10 @@ app.get('/', (req, res, next) => {
   }
   next();
 });
+
+// Admin Routes mounted at both /api/admin and /admin
+app.use('/api/admin', adminRoutes);
+app.use('/admin', adminRoutes);
 
 // API Routes mounted at both /api and root /
 app.use('/api', referralRoutes);

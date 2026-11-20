@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { QrCode, Shield, CheckCircle2, Search, UserPlus } from 'lucide-react';
+import { QrCode, Shield, Search, UserPlus, Lock, LayoutDashboard } from 'lucide-react';
 import { checkHealth } from '../api/client';
 
 export default function Header({ currentView, onNavigate }) {
@@ -29,8 +29,11 @@ export default function Header({ currentView, onNavigate }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div className="header-badge" title={serverOnline === true ? 'Backend Connected' : serverOnline === false ? 'Backend Offline' : 'Connecting...'}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div
+          className="header-badge"
+          title={serverOnline === true ? 'Backend Connected' : serverOnline === false ? 'Backend Offline' : 'Connecting...'}
+        >
           <span
             style={{
               width: 8,
@@ -43,17 +46,7 @@ export default function Header({ currentView, onNavigate }) {
           <span>{serverOnline === true ? 'MongoDB Active' : serverOnline === false ? 'API Offline' : 'Verifying...'}</span>
         </div>
 
-        {currentView === 'register' ? (
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ height: '36px', padding: '0 12px', fontSize: '0.82rem' }}
-            onClick={() => onNavigate('lookup')}
-          >
-            <Search size={14} />
-            <span>Find My QR</span>
-          </button>
-        ) : (
+        {currentView === 'admin' ? (
           <button
             type="button"
             className="btn-secondary"
@@ -61,8 +54,49 @@ export default function Header({ currentView, onNavigate }) {
             onClick={() => onNavigate('register')}
           >
             <UserPlus size={14} />
-            <span>New Registration</span>
+            <span>Public Registration</span>
           </button>
+        ) : (
+          <>
+            {currentView === 'register' ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ height: '36px', padding: '0 12px', fontSize: '0.82rem' }}
+                onClick={() => onNavigate('lookup')}
+              >
+                <Search size={14} />
+                <span>Find My QR</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ height: '36px', padding: '0 12px', fontSize: '0.82rem' }}
+                onClick={() => onNavigate('register')}
+              >
+                <UserPlus size={14} />
+                <span>New Registration</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{
+                height: '36px',
+                padding: '0 12px',
+                fontSize: '0.82rem',
+                backgroundColor: '#f8fafc',
+                borderColor: '#cbd5e1'
+              }}
+              onClick={() => onNavigate('admin')}
+              title="Admin Portal - Manage registered users & referrals"
+            >
+              <Lock size={14} color="#475569" />
+              <span>Admin</span>
+            </button>
+          </>
         )}
       </div>
     </header>

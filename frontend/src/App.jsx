@@ -5,20 +5,30 @@ import SuccessPage from './components/SuccessPage';
 import ReferralLookup from './components/ReferralLookup';
 import TermsModal from './components/TermsModal';
 import Toast from './components/Toast';
+import AdminLogin from './components/admin/AdminLogin';
+import AdminDashboard from './components/admin/AdminDashboard';
 import { getReferralByCode } from './api/client';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('register'); // 'register' | 'success' | 'lookup'
+  const [currentView, setCurrentView] = useState('register'); // 'register' | 'success' | 'lookup' | 'admin'
   const [successData, setSuccessData] = useState(null);
   const [initialReferralCode, setInitialReferralCode] = useState('');
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'success' });
+  const [adminToken, setAdminToken] = useState(() => {
+    return sessionStorage.getItem('referralpay_admin_token') || '';
+  });
 
-  // Check URL parameters for referral links e.g. /?ref=REF10001
+  // Check URL parameters for referral links e.g. /?ref=REF10001 or /?view=admin
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref') || params.get('code');
     const viewParam = params.get('view');
+
+    if (viewParam === 'admin') {
+      setCurrentView('admin');
+      return;
+    }
 
     if (refCode) {
       const cleanRef = refCode.trim().toUpperCase();
@@ -73,8 +83,22 @@ export default function App() {
     }
   };
 
+  // Admin Auth handlers
+  const handleAdminLoginSuccess = (token) => {
+    sessionStorage.setItem('referralpay_admin_token', token);
+    setAdminToken(token);
+    setCurrentView('admin');
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('referralpay_admin_token');
+    setAdminToken('');
+    setCurrentView('register');
+    showToast('Admin logged out successfully', 'success');
+  };
+
   return (
-    <div className="app-container">
+    <div className="app-container" style={currentView === 'admin' ? { maxWidth: '1240px' } : undefined}>
       <Header
         currentView={currentView}
         onNavigate={(view) => {
@@ -107,6 +131,22 @@ export default function App() {
             onBackToRegister={handleNewRegistration}
             onShowToast={showToast}
           />
+        )}
+
+        {currentView === 'admin' && (
+          adminToken ? (
+            <AdminDashboard
+              token={adminToken}
+              onLogout={handleAdminLogout}
+              onShowToast={showToast}
+            />
+          ) : (
+            <AdminLogin
+              onLoginSuccess={handleAdminLoginSuccess}
+              onBackToHome={handleNewRegistration}
+              onShowToast={showToast}
+            />
+          )
         )}
       </main>
 
