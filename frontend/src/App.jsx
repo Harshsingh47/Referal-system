@@ -12,7 +12,13 @@ import { getReferralByCode } from './api/client';
 export default function App() {
   const [currentView, setCurrentView] = useState('register'); // 'register' | 'success' | 'lookup' | 'admin'
   const [successData, setSuccessData] = useState(null);
-  const [initialReferralCode, setInitialReferralCode] = useState('');
+  const [initialReferralCode, setInitialReferralCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return (params.get('ref') || params.get('code') || '').trim().toUpperCase();
+    }
+    return '';
+  });
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'success' });
   const [adminToken, setAdminToken] = useState(() => {
@@ -45,7 +51,11 @@ export default function App() {
           })
           .catch(() => {
             // Keep default registration view with referral populated
+            setCurrentView('register');
           });
+      } else {
+        // Direct referral link or QR scan -> open registration form with prefilled referral code
+        setCurrentView('register');
       }
     }
   }, []);

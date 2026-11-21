@@ -646,7 +646,7 @@ export default function AdminDashboard({ token, onLogout, onShowToast }) {
                   </div>
 
                   {/* Referral Link */}
-                  {selectedUser.referralUrl && (
+                  {(selectedUser.referralUrl || selectedUser.referralCode) && (
                     <div className="admin-detail-section">
                       <div className="admin-detail-title">Public Referral URL</div>
                       <div
@@ -662,12 +662,22 @@ export default function AdminDashboard({ token, onLogout, onShowToast }) {
                           wordBreak: 'break-all'
                         }}
                       >
-                        <span style={{ flex: 1, color: '#2563eb' }}>{selectedUser.referralUrl}</span>
+                        <span style={{ flex: 1, color: '#2563eb' }}>
+                          {selectedUser.referralUrl && !selectedUser.referralUrl.includes('backend-one-rho-96')
+                            ? selectedUser.referralUrl
+                            : `${window.location.origin}/?ref=${selectedUser.referralCode}`}
+                        </span>
                         <button
                           type="button"
                           className="btn-secondary"
                           style={{ height: '30px', padding: '0 8px', fontSize: '0.75rem' }}
-                          onClick={() => copyToClipboard(selectedUser.referralUrl, 'Referral link')}
+                          onClick={() => {
+                            const link =
+                              selectedUser.referralUrl && !selectedUser.referralUrl.includes('backend-one-rho-96')
+                                ? selectedUser.referralUrl
+                                : `${window.location.origin}/?ref=${selectedUser.referralCode}`;
+                            copyToClipboard(link, 'Referral link');
+                          }}
                         >
                           <Copy size={12} />
                         </button>

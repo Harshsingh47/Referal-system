@@ -43,6 +43,17 @@ export default function RegistrationForm({ onRegistrationSuccess, initialReferra
   const [serverError, setServerError] = useState('');
   const [referrerDetails, setReferrerDetails] = useState(null);
 
+  // Sync initialReferralCode from URL / props into formData whenever available
+  useEffect(() => {
+    if (initialReferralCode) {
+      const clean = initialReferralCode.trim().toUpperCase();
+      setFormData((prev) => ({
+        ...prev,
+        referredBy: clean
+      }));
+    }
+  }, [initialReferralCode]);
+
   // Auto-detect & validate referredBy if provided in query params or changed
   useEffect(() => {
     if (formData.referredBy && formData.referredBy.length >= 6) {
@@ -259,11 +270,28 @@ export default function RegistrationForm({ onRegistrationSuccess, initialReferra
 
       {referrerDetails && (
         <div className="referrer-banner">
-          <Gift size={20} color="#2563eb" />
-          <div>
-            <strong>Referred By: {referrerDetails.referrerName}</strong> ({referrerDetails.referralCode})
-            <p style={{ fontSize: '0.78rem', color: '#1e40af', margin: 0 }}>
-              You will be connected under this referral code upon registration.
+          <Gift size={22} color="#2563eb" style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e3a8a' }}>
+                🎉 Invited by {referrerDetails.referrerName}!
+              </span>
+              <span
+                style={{
+                  background: '#dbeafe',
+                  color: '#1d4ed8',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  fontSize: '0.78rem'
+                }}
+              >
+                {referrerDetails.referralCode}
+              </span>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#1e40af', margin: '4px 0 0 0' }}>
+              You will be connected under this referral sponsor. Complete registration below to generate your own personal referral code & QR code!
             </p>
           </div>
         </div>
@@ -338,7 +366,7 @@ export default function RegistrationForm({ onRegistrationSuccess, initialReferra
             />
 
             <InputField
-              label="Referral Code (If referred by friend)"
+              label="Referral Code (Sponsor / Invited By)"
               name="referredBy"
               placeholder="e.g. REF10001"
               value={formData.referredBy}
@@ -348,7 +376,7 @@ export default function RegistrationForm({ onRegistrationSuccess, initialReferra
               maxLength={12}
               fontMono
               icon={Gift}
-              hint={referrerDetails ? `✓ Valid referrer: ${referrerDetails.referrerName}` : 'Optional referral code'}
+              hint={referrerDetails ? `✓ Verified Sponsor: ${referrerDetails.referrerName}` : 'Optional referral code'}
               error={touched.referredBy ? errors.referredBy : ''}
               isValid={!!referrerDetails}
             />

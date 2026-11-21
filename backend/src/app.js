@@ -47,8 +47,18 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Apply general rate limiter to all API calls
 app.use(generalRateLimiter);
 
-// Root greeting & status (only for exact root GET /)
-app.get('/', (req, res, next) => {
+// Smart redirect for referral scans hitting the backend directly (e.g. older QR codes or /r/:code shortlinks)
+app.get(['/', '/r/:code', '/ref/:code', '/referral-redirect/:code'], (req, res, next) => {
+  const refCode = req.query.ref || req.query.code || req.params.code;
+  if (refCode) {
+    const cleanRef = encodeURIComponent(String(refCode).trim().toUpperCase());
+    const frontendTarget = (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('backend-one-rho-96'))
+      ? process.env.FRONTEND_URL.replace(/\/+$/, '')
+      : 'https://www.sudhiskaenterprises.com';
+    return res.redirect(302, `${frontendTarget}/?ref=${cleanRef}`);
+  }
+
+  // Root greeting & status (only for exact root GET / with no referral parameter)
   if (req.path === '/' || req.path === '') {
     return res.json({
       project: 'Referral Registration & QR Code Generation System API',

@@ -6,17 +6,48 @@ import { generateQRCodeDataUrl } from '../utils/qrcode.js';
 import { validateRegistrationInput } from '../utils/validators.js';
 
 /**
- * Resolve base URL dynamically from request or env (essential for Vercel)
+ * Resolve frontend base URL dynamically from request, client body, or env
+ * Always ensures the referral link opens the FRONTEND registration app, NOT the backend API.
  */
 export const getBaseUrl = (req) => {
-  if (process.env.FRONTEND_URL) {
+  // 1. If client provided its origin in body (e.g. registration form)
+  if (req?.body?.clientOrigin && typeof req.body.clientOrigin === 'string') {
+    const clientOrigin = req.body.clientOrigin.trim().replace(/\/+$/, '');
+    if (!clientOrigin.includes('backend-one-rho-96') && !clientOrigin.includes(':5000')) {
+      return clientOrigin;
+    }
+  }
+
+  // 2. Check HTTP Origin header from browser request
+  const origin = req?.headers?.origin;
+  if (origin && !origin.includes('backend-one-rho-96') && !origin.includes(':5000')) {
+    return origin.replace(/\/+$/, '');
+  }
+
+  // 3. Check HTTP Referer header
+  const referer = req?.headers?.referer;
+  if (referer) {
+    try {
+      const url = new URL(referer);
+      if (!url.hostname.includes('backend-one-rho-96') && !url.host.includes(':5000')) {
+        return url.origin.replace(/\/+$/, '');
+      }
+    } catch {
+      // ignore parsing error
+    }
+  }
+
+  // 4. If FRONTEND_URL is explicitly set in environment and not pointing to backend
+  if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('backend-one-rho-96')) {
     return process.env.FRONTEND_URL.replace(/\/+$/, '');
   }
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-  if (host) {
-    return `${proto}://${host}`;
+
+  // 5. Default in production / Vercel: use primary custom domain
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    return 'https://www.sudhiskaenterprises.com';
   }
+
+  // 6. Default in local development
   return 'http://localhost:5173';
 };
 

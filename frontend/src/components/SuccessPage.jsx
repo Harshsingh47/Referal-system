@@ -44,9 +44,15 @@ export default function SuccessPage({ data, onNewRegistration, onShowToast }) {
     }
   };
 
+  // Clean referral URL ensuring it points to the frontend domain
+  const cleanReferralUrl =
+    data.referralUrl && !data.referralUrl.includes('backend-one-rho-96')
+      ? data.referralUrl
+      : `${typeof window !== 'undefined' ? window.location.origin : 'https://www.sudhiskaenterprises.com'}/?ref=${data.referralCode}`;
+
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(data.referralUrl);
+      await navigator.clipboard.writeText(cleanReferralUrl);
       setCopiedLink(true);
       onShowToast('Referral link copied to clipboard!', 'success');
       setTimeout(() => setCopiedLink(false), 2500);
@@ -73,14 +79,14 @@ export default function SuccessPage({ data, onNewRegistration, onShowToast }) {
 
   // WhatsApp share link
   const whatsappText = encodeURIComponent(
-    `Join using my official referral link: ${data.referralUrl}\nReferral Code: ${data.referralCode}`
+    `Join using my official referral link: ${cleanReferralUrl}\nReferral Code: ${data.referralCode}`
   );
   const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
 
   // Email share link
   const emailSubject = encodeURIComponent(`Exclusive Invitation - Referral Code ${data.referralCode}`);
   const emailBody = encodeURIComponent(
-    `Hello,\n\nI have registered as an official partner. You can join using my referral link:\n${data.referralUrl}\n\nReferral Code: ${data.referralCode}\n\nBest regards,\n${data.fullName}`
+    `Hello,\n\nI have registered as an official partner. You can join using my referral link:\n${cleanReferralUrl}\n\nReferral Code: ${data.referralCode}\n\nBest regards,\n${data.fullName}`
   );
   const emailUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
 
@@ -171,7 +177,7 @@ export default function SuccessPage({ data, onNewRegistration, onShowToast }) {
             <input
               type="text"
               readOnly
-              value={data.referralUrl}
+              value={cleanReferralUrl}
               className="link-input"
               onClick={(e) => e.target.select()}
             />

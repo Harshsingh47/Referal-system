@@ -42,9 +42,10 @@ async function apiRequest(endpoint, options = {}) {
  * @param {Object} formData
  */
 export async function registerUser(formData) {
+  const clientOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
   return apiRequest('/register', {
     method: 'POST',
-    body: JSON.stringify(formData)
+    body: JSON.stringify({ ...formData, clientOrigin })
   });
 }
 
