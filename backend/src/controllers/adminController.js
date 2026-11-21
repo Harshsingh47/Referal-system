@@ -60,7 +60,7 @@ export const getRegistrations = async (req, res, next) => {
       query.registrationStatus = status.toLowerCase();
     }
 
-    // Search across Name, Email, Mobile, Referral Code, Referred By, ID
+    // Search across Name, Email, Mobile, Referral Code, Referred By, Referrer Name, ID
     if (search && search.trim()) {
       const regex = new RegExp(search.trim(), 'i');
       query.$or = [
@@ -69,6 +69,7 @@ export const getRegistrations = async (req, res, next) => {
         { mobileNumber: regex },
         { referralCode: regex },
         { referredBy: regex },
+        { referrerName: regex },
         { registrationId: regex },
         { bankName: regex },
         { accountHolderName: regex }
@@ -88,25 +89,50 @@ export const getRegistrations = async (req, res, next) => {
         .lean()
     ]);
 
-    // Format safe response with masked bank account
-    const formatted = registrations.map((doc) => ({
-      _id: doc._id,
-      registrationId: doc.registrationId,
-      fullName: doc.fullName,
-      email: doc.email,
-      mobileNumber: doc.mobileNumber,
-      address: doc.address || '',
-      accountHolderName: doc.accountHolderName,
-      bankName: doc.bankName,
-      accountNumberMasked: `•••• •••• ${doc.accountNumberLast4 || '••••'}`,
-      accountNumberLast4: doc.accountNumberLast4,
-      ifscCode: doc.ifscCode,
-      branchName: doc.branchName || '',
-      referralCode: doc.referralCode,
-      referredBy: doc.referredBy || null,
-      registrationDate: doc.registrationDate || doc.createdAt,
-      status: doc.registrationStatus || 'active'
-    }));
+    // Auto-resolve missing referrer details for older records
+    const missingCodes = [
+      ...new Set(
+        registrations
+          .filter((d) => d.referredBy && !d.referrerName)
+          .map((d) => d.referredBy)
+      )
+    ];
+    const referrerMap = {};
+    if (missingCodes.length > 0) {
+      const referrers = await Registration.find(
+        { referralCode: { $in: missingCodes } },
+        'referralCode fullName email mobileNumber'
+      ).lean();
+      referrers.forEach((r) => {
+        referrerMap[r.referralCode] = r;
+      });
+    }
+
+    // Format safe response with masked bank account and full sponsor attribution
+    const formatted = registrations.map((doc) => {
+      const fallbackSponsor = referrerMap[doc.referredBy];
+      return {
+        _id: doc._id,
+        registrationId: doc.registrationId,
+        fullName: doc.fullName,
+        email: doc.email,
+        mobileNumber: doc.mobileNumber,
+        address: doc.address || '',
+        accountHolderName: doc.accountHolderName,
+        bankName: doc.bankName,
+        accountNumberMasked: `•••• •••• ${doc.accountNumberLast4 || '••••'}`,
+        accountNumberLast4: doc.accountNumberLast4,
+        ifscCode: doc.ifscCode,
+        branchName: doc.branchName || '',
+        referralCode: doc.referralCode,
+        referredBy: doc.referredBy || null,
+        referrerName: doc.referrerName || fallbackSponsor?.fullName || null,
+        referrerEmail: doc.referrerEmail || fallbackSponsor?.email || null,
+        referrerMobile: doc.referrerMobile || fallbackSponsor?.mobileNumber || null,
+        registrationDate: doc.registrationDate || doc.createdAt,
+        status: doc.registrationStatus || 'active'
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -148,6 +174,23 @@ export const getRegistrationDetails = async (req, res, next) => {
       referredBy: registration.referralCode
     });
 
+    // Auto-resolve sponsor details if missing
+    let sponsorName = registration.referrerName || null;
+    let sponsorEmail = registration.referrerEmail || null;
+    let sponsorMobile = registration.referrerMobile || null;
+
+    if (registration.referredBy && !sponsorName) {
+      const sponsor = await Registration.findOne(
+        { referralCode: registration.referredBy },
+        'fullName email mobileNumber'
+      ).lean();
+      if (sponsor) {
+        sponsorName = sponsor.fullName;
+        sponsorEmail = sponsor.email;
+        sponsorMobile = sponsor.mobileNumber;
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: {
@@ -165,6 +208,9 @@ export const getRegistrationDetails = async (req, res, next) => {
         branchName: registration.branchName,
         referralCode: registration.referralCode,
         referredBy: registration.referredBy,
+        referrerName: sponsorName,
+        referrerEmail: sponsorEmail,
+        referrerMobile: sponsorMobile,
         registrationDate: registration.registrationDate,
         status: registration.registrationStatus,
         referralUrl,
@@ -292,6 +338,25 @@ export const exportRegistrationsCsv = async (req, res, next) => {
   try {
     const registrations = await Registration.find({}).sort({ createdAt: -1 }).lean();
 
+    // Auto-resolve missing referrer details for older records
+    const missingCodes = [
+      ...new Set(
+        registrations
+          .filter((d) => d.referredBy && !d.referrerName)
+          .map((d) => d.referredBy)
+      )
+    ];
+    const referrerMap = {};
+    if (missingCodes.length > 0) {
+      const referrers = await Registration.find(
+        { referralCode: { $in: missingCodes } },
+        'referralCode fullName email mobileNumber'
+      ).lean();
+      referrers.forEach((r) => {
+        referrerMap[r.referralCode] = r;
+      });
+    }
+
     const headers = [
       'Registration ID',
       'Full Name',
@@ -304,7 +369,9 @@ export const exportRegistrationsCsv = async (req, res, next) => {
       'Branch',
       'Masked Account',
       'Referral Code',
-      'Referred By',
+      'Referred By Code',
+      'Referrer Name',
+      'Referrer Mobile',
       'Status',
       'Registration Date'
     ];
@@ -315,22 +382,30 @@ export const exportRegistrationsCsv = async (req, res, next) => {
       return `"${clean}"`;
     };
 
-    const rows = registrations.map((r) => [
-      escapeCsv(r.registrationId),
-      escapeCsv(r.fullName),
-      escapeCsv(r.email),
-      escapeCsv(r.mobileNumber),
-      escapeCsv(r.address),
-      escapeCsv(r.bankName),
-      escapeCsv(r.accountHolderName),
-      escapeCsv(r.ifscCode),
-      escapeCsv(r.branchName),
-      escapeCsv(`•••• ${r.accountNumberLast4}`),
-      escapeCsv(r.referralCode),
-      escapeCsv(r.referredBy || 'None'),
-      escapeCsv(r.registrationStatus),
-      escapeCsv(r.registrationDate ? new Date(r.registrationDate).toISOString() : '')
-    ]);
+    const rows = registrations.map((r) => {
+      const sponsor = referrerMap[r.referredBy];
+      const sponsorName = r.referrerName || sponsor?.fullName || '';
+      const sponsorMobile = r.referrerMobile || sponsor?.mobileNumber || '';
+
+      return [
+        escapeCsv(r.registrationId),
+        escapeCsv(r.fullName),
+        escapeCsv(r.email),
+        escapeCsv(r.mobileNumber),
+        escapeCsv(r.address),
+        escapeCsv(r.bankName),
+        escapeCsv(r.accountHolderName),
+        escapeCsv(r.ifscCode),
+        escapeCsv(r.branchName),
+        escapeCsv(`•••• ${r.accountNumberLast4}`),
+        escapeCsv(r.referralCode),
+        escapeCsv(r.referredBy || 'None'),
+        escapeCsv(sponsorName || 'None'),
+        escapeCsv(sponsorMobile || 'None'),
+        escapeCsv(r.registrationStatus),
+        escapeCsv(r.registrationDate ? new Date(r.registrationDate).toISOString() : '')
+      ];
+    });
 
     const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
 

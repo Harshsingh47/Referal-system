@@ -431,7 +431,13 @@ export default function AdminDashboard({ token, onLogout, onShowToast }) {
                           <Copy size={11} />
                         </span>
                         {user.referredBy && (
-                          <div className="referred-by-label">Referred by: {user.referredBy}</div>
+                          <div className="referred-by-label" style={{ marginTop: '4px', lineHeight: 1.3 }}>
+                            <span style={{ color: '#64748b' }}>By: </span>
+                            <strong style={{ color: '#1e293b' }}>{user.referrerName || user.referredBy}</strong>
+                            <span style={{ color: '#94a3b8', fontSize: '0.72rem', display: 'block' }}>
+                              ({user.referredBy})
+                            </span>
+                          </div>
                         )}
                       </div>
                     </td>
@@ -641,6 +647,50 @@ export default function AdminDashboard({ token, onLogout, onShowToast }) {
                       <div className="admin-detail-item full-width">
                         <span className="label">Branch Name</span>
                         <span className="val">{selectedUser.branchName || 'Not specified'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MLM & Referral Sponsorship Info */}
+                  <div className="admin-detail-section">
+                    <div className="admin-detail-title">MLM & Referral Sponsorship</div>
+                    <div className="admin-detail-grid">
+                      <div className="admin-detail-item">
+                        <span className="label">Personal Referral Code</span>
+                        <span className="val" style={{ fontFamily: 'var(--font-mono)', color: '#2563eb' }}>
+                          {selectedUser.referralCode}
+                        </span>
+                      </div>
+                      <div className="admin-detail-item">
+                        <span className="label">Downline Partners Generated</span>
+                        <span className="val">{selectedUser.referralsCount || 0} registered</span>
+                      </div>
+                      <div className="admin-detail-item full-width">
+                        <span className="label">Sponsor (Referred By User)</span>
+                        <span className="val">
+                          {selectedUser.referredBy ? (
+                            <>
+                              <strong style={{ color: '#0f172a' }}>
+                                {selectedUser.referrerName || selectedUser.referredBy}
+                              </strong>{' '}
+                              <span style={{ fontFamily: 'var(--font-mono)', color: '#2563eb' }}>
+                                ({selectedUser.referredBy})
+                              </span>
+                              {selectedUser.referrerMobile && (
+                                <span style={{ color: '#64748b', fontSize: '0.8rem', marginLeft: '8px' }}>
+                                  • Phone: +91 {selectedUser.referrerMobile}
+                                </span>
+                              )}
+                              {selectedUser.referrerEmail && (
+                                <span style={{ color: '#64748b', fontSize: '0.8rem', marginLeft: '8px' }}>
+                                  • Email: {selectedUser.referrerEmail}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>Direct Registration (No Sponsor)</span>
+                          )}
+                        </span>
                       </div>
                     </div>
                   </div>

@@ -87,12 +87,22 @@ export const registerUser = async (req, res, next) => {
       });
     }
 
-    // 4. Validate Referrer Code (if provided)
-    let validReferrer = null;
+    // 4. Validate Referrer Code & Capture Sponsor Information for MLM tracking
+    let validReferrerCode = null;
+    let referrerName = null;
+    let referrerEmail = null;
+    let referrerMobile = null;
+    let referrerUserId = null;
+
     if (sanitizedData.referredBy) {
-      const referrer = await Registration.findOne({ referralCode: sanitizedData.referredBy });
+      const cleanRefCode = sanitizedData.referredBy.trim().toUpperCase();
+      const referrer = await Registration.findOne({ referralCode: cleanRefCode });
       if (referrer) {
-        validReferrer = referrer.referralCode;
+        validReferrerCode = referrer.referralCode;
+        referrerName = referrer.fullName;
+        referrerEmail = referrer.email;
+        referrerMobile = referrer.mobileNumber;
+        referrerUserId = referrer._id;
       }
     }
 
@@ -108,7 +118,7 @@ export const registerUser = async (req, res, next) => {
     const encryptedAccountNumber = encrypt(sanitizedData.accountNumber);
     const accountNumberLast4 = sanitizedData.accountNumber.slice(-4);
 
-    // 7. Save to MongoDB
+    // 7. Save to MongoDB with full sponsor attribution
     const registration = new Registration({
       registrationId,
       fullName: sanitizedData.fullName,
@@ -122,7 +132,11 @@ export const registerUser = async (req, res, next) => {
       ifscCode: sanitizedData.ifscCode,
       branchName: sanitizedData.branchName,
       referralCode,
-      referredBy: validReferrer,
+      referredBy: validReferrerCode,
+      referrerName,
+      referrerEmail,
+      referrerMobile,
+      referrerUser: referrerUserId,
       registrationDate: new Date(),
       registrationStatus: 'active'
     });
@@ -144,6 +158,8 @@ export const registerUser = async (req, res, next) => {
         email: registration.email,
         mobileNumber: registration.mobileNumber,
         referralCode,
+        referredBy: registration.referredBy,
+        referrerName: registration.referrerName,
         referralUrl,
         qrCodeDataUrl,
         registrationDate: registration.registrationDate,

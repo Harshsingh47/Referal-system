@@ -64,7 +64,7 @@ const registrationSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
-    // Referral Details
+    // Referral Details & Sponsorship
     referralCode: {
       type: String,
       required: true,
@@ -72,10 +72,34 @@ const registrationSchema = new mongoose.Schema(
       trim: true,
       uppercase: true
     },
+    // The referral code of the user who referred this person
     referredBy: {
       type: String,
       trim: true,
       uppercase: true,
+      default: null,
+      index: true
+    },
+    // Direct sponsor information captured at registration for MLM tracking
+    referrerName: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    referrerEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: null
+    },
+    referrerMobile: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    referrerUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Registration',
       default: null
     },
     registrationDate: {
